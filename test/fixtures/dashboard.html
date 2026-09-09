@@ -1,4 +1,13 @@
-<!doctype html><html><body><div id="MainContent">
+<!doctype html><html><body><script>
+var IsAuthenticated = 'Yes';
+function DoAfterAjax(Res) {
+  if (Res == '~SessionExpire' || Res == '~ChangeUser') {
+    SessionTimedOutAlert();
+  } else {
+    document.getElementById('MainContent').innerHTML = Res;
+  }
+}
+</script><div id="MainContent">
 <table><tr><td class="Table_Title">کاربر گرامی</td><td>Fixture Customer</td></tr>
 <tr><td class="Table_Title">سرویس فعال</td><td>Example 80 GiB</td></tr>
 <tr><td class="Table_Title">تاریخ شروع سرویس</td><td>1405/01/01</td></tr>

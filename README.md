@@ -2,6 +2,10 @@
 
 Native Flutter Android client for the inspected DeltaSIB portal. This is a working read-only integration project, **not a production-release certification**. It does not embed a website or contain test-account credentials.
 
+## Version 0.1.1 login fix
+
+Version 0.1.0 incorrectly treated expiry-marker strings inside the dashboard's normal JavaScript error handlers as a real expired session, clearing a successful login. Version 0.1.1 checks response payloads and actual authentication controls instead. Updated dashboard fixtures reproduce the original failure, and the 22-test suite passes after the fix. Install the updated APK over the existing app and sign in again; a password change is not required for this bug.
+
 ## Open and build
 
 Toolchain used: Flutter 3.47.2 / Dart 3.13.2, JDK 21, Android SDK 36 (Gradle may install additional pinned SDK/NDK components), minimum Android API 24. Install Flutter and Android command-line tools or Android Studio; accept the local SDK licenses. No tooling is installed on the ISP server.

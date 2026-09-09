@@ -11,13 +11,40 @@ class PortalHtmlAdapter {
     if (source.length > 4 * 1024 * 1024) {
       throw const PortalException(PortalFailure.malformed);
     }
-    if (source.contains('~SessionExpire') ||
-        source.contains('~ChangeUser') ||
-        RegExp(r'''IsAuthenticated\s*=\s*['"]No''').hasMatch(source) ||
-        source.contains('name="Password"')) {
+    // Valid pages contain JavaScript branches mentioning these markers.
+    // Inspect the actual response payload, not arbitrary source substrings.
+    final doc = html.parse(source);
+    final unauthenticated = doc
+        .querySelectorAll('script')
+        .any(
+          (script) => RegExp(
+            r"""^\s*(?:(?:var|let|const)\s+)?IsAuthenticated\s*=\s*(['"])No\1\s*;?\s*$""",
+            multiLine: true,
+          ).hasMatch(script.text),
+        );
+    final loginForm = doc
+        .querySelectorAll('form')
+        .any(
+          (form) =>
+              form.querySelector('input[name="Username"]') != null &&
+              form.querySelector('input[name="Password"][type="password"]') !=
+                  null,
+        );
+    for (final element in doc.querySelectorAll('script,style,template')) {
+      element.remove();
+    }
+    final envelope = RegExp(
+      r'^<data>\s*<Error>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*</Error>\s*</data>$',
+      caseSensitive: false,
+    ).firstMatch(source.trim());
+    final payload = (envelope?[1] ?? doc.body?.text ?? '').trim();
+    if (payload == '~SessionExpire' ||
+        payload == '~ChangeUser' ||
+        unauthenticated ||
+        loginForm) {
       throw const PortalException(PortalFailure.expired);
     }
-    if (source.trim().startsWith('~')) {
+    if (payload.startsWith('~')) {
       throw const PortalException(PortalFailure.server);
     }
   }

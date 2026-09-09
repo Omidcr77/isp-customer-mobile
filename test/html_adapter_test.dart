@@ -17,6 +17,42 @@ void main() {
   });
 
   const adapter = PortalHtmlAdapter();
+  test('valid dashboard may contain expiry-handler source code', () {
+    final source = File('test/fixtures/dashboard.html').readAsStringSync();
+    expect(source, contains("Res == '~SessionExpire'"));
+    expect(() => adapter.check(source), returnsNormally);
+    expect(adapter.parse(source, dashboard: true).fields, isNotEmpty);
+  });
+  test(
+    'recognizes actual logout controls without matching code references',
+    () {
+      for (final source in [
+        '~SessionExpire',
+        '~ChangeUser',
+        '<data><Error><![CDATA[~SessionExpire]]></Error></data>',
+        "<script>var IsAuthenticated = 'No';</script>",
+        "<form><input name='Username'><input type='password' name='Password'></form>",
+      ]) {
+        expect(
+          () => adapter.check(source),
+          throwsA(
+            isA<PortalException>().having(
+              (e) => e.kind,
+              'kind',
+              PortalFailure.expired,
+            ),
+          ),
+        );
+      }
+      expect(
+        () => adapter.check(
+          "<script>function f(r) { if (r == '~SessionExpire') { return; } }</script><div>Account</div>",
+        ),
+        returnsNormally,
+      );
+    },
+  );
+
   test(
     'extracts native dashboard fields, chart bytes and portal remaining days',
     () {
