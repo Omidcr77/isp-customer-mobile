@@ -88,3 +88,36 @@ Device integration uses a fake repository and does not transmit credentials. Ver
 - Original portal client-side history filters, natural server timeout tests, all possible status/validation branches, and full portal-content translation are not complete.
 
 See [portal analysis](docs/portal-analysis.md), [endpoint inventory](docs/endpoint-inventory.md), and [security review](docs/security-review.md). No claim is made that these unverified features work. Plain HTTP exposes credentials; HTTPS or a protected network path is required before public deployment.
+
+## Authorized live Android verification
+
+Use a dedicated test emulator: the suite clears this app's local session storage. The standard device suite now includes the login/error/logout flows from `test/app_flow_test.dart` as well as native secure-storage verification:
+
+```sh
+flutter test integration_test/app_test.dart -d emulator-5554 --dart-define=ALLOW_HTTP=true
+```
+
+For an explicitly authorized live portal check, start `python3 tool/live_test_credentials.py` in a terminal and enter the temporary account credentials at the hidden prompts. The helper serves them once from memory on loopback, without request logging, and exits. In another terminal:
+
+```sh
+adb -s emulator-5554 reverse tcp:8767 tcp:8767
+flutter test integration_test/live_portal_test.dart -d emulator-5554 \
+  --dart-define=ALLOW_HTTP=true --dart-define=RUN_LIVE_PORTAL=true
+adb -s emulator-5554 reverse --remove tcp:8767
+```
+
+Do not put real credentials in dart-defines, command arguments, fixtures or files. The live test is skipped unless explicitly enabled. It exercises automatic login, manual login through native controls, session restoration, implemented read-only page requests, available usage drilldowns, and logout. It does not purchase, renew, transfer credit, change account details, upload, or test notification read side effects. Unsupported screens returning explanatory notices are not evidence of working portal features. Connection detection can differ between an emulator and a customer's ISP connection.
+
+On a memory-constrained workstation, build the combined test APK with the emulator stopped, then boot the emulator and run the prebuilt binary. Start the credential handoff before the test and configure the ADB reverse mapping as above:
+
+```sh
+flutter build apk --debug --target-platform=android-x64 \
+  -t integration_test/device_acceptance_test.dart \
+  --dart-define=ALLOW_HTTP=true --dart-define=RUN_LIVE_PORTAL=true
+# Boot the emulator and wait for: adb shell getprop sys.boot_completed -> 1
+flutter drive --driver=test_driver/integration_test.dart \
+  --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk \
+  -d emulator-5554
+```
+
+This produces a **test APK**, not the customer download. Rebuild with the normal README command targeting `lib/main.dart` for distribution. The customer artifact remains `artifacts/isp-customer-mobile-0.1.3-debug.apk`. Android 36 emulator acceptance and live manual login passed; see [verification](docs/verification.md) for the AutoLogin refusal and unsupported-feature limits.

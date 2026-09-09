@@ -56,6 +56,11 @@ void main() {
       expect(find.text('Fixture service'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Sign out & clear data'),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Sign out & clear data'));
       await tester.pumpAndSettle();
       expect(repo.autoAttempts, 1);
@@ -113,6 +118,11 @@ void main() {
     expect(find.text('Fixture service'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.tune));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Sign out & clear data'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Sign out & clear data'));
     await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);

@@ -41,7 +41,7 @@ App base: fixed `http://192.168.10.2/users/`. All authenticated requests use the
 
 Cookies: DSUSERSESSID and DSUserTimeOut, values omitted. Observed flags lacked Secure/HttpOnly; SameSite Lax reported by browser. No CSRF input was observed in the inspected login/password forms; absence in inspected markup is **not** proof that the server has no CSRF defense. App follows no redirects, rejects non-HTTPS release URLs, uses normal platform certificate validation, and reads only fixed page paths. It never evaluates returned scripts or follows invoice/document/external links.
 
-Browser network capture was programmatic. Natural authentication timeout, incorrect-login response text, populated catalog/documents, notification effects, and transaction responses were not tested. All tests in the repository run with synthetic fixtures; they do not contact the portal.
+Browser network capture was programmatic. Natural authentication timeout, incorrect-login response text, populated catalog/documents, notification effects, and transaction responses were not tested. Default tests use synthetic fixtures. The separately enabled live device suite is documented in docs/verification.md.
 
 ## Connection login update (0.1.2)
 
@@ -50,3 +50,7 @@ Read-only public source inspection found `ShowAutoLogin(Username, Delay)`, whose
 ## 0.1.3 handling update
 
 The connection-login button performs GET wrapper → POST AutoLogin → authenticated GET dashboard verification. The HTTP acknowledgment checkbox no longer sends requests. Rechecking from the workstation with a Dart-style user agent returned 200 for the wrapper and a leading-tilde login refusal; this did not reproduce the phone's exact expiry response. Redirects remain unexecuted and are now classified by pre/post-authentication context. No new endpoint or transaction was introduced.
+
+## Native verification
+
+Android 36 emulator acceptance verified ManualLogin, authenticated read-only page requests, two usage drilldowns, and logout with the real authorized account. AutoLogin returned a refusal on that connection; it did not establish an authenticated session. No new endpoint, credential value, cookie value or customer identifier is recorded here. See docs/verification.md for limits.

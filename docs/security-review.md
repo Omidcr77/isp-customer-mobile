@@ -23,7 +23,7 @@
 5. Human review of Dari/Pashto translations is outstanding. Portal-supplied values remain original; Pashto Material framework strings fall back to Persian.
 6. No purchase, renewal, payment, credit transfer, password/profile edit, upload, gift activation, emergency credit, disconnect or reserve activation is implemented. Each requires explicit authorization and separate threat/workflow review.
 7. A production signing key and distribution process are not configured. Release builds must not use the debug key.
-8. No physical Android device or emulator was initially attached. See README for exact verification performed; do not equate an APK build with on-device acceptance or a production security audit.
+8. Android 36 emulator acceptance and live manual login now pass; see docs/verification.md. Physical-device testing, production hardening and release certification remain separate.
 
 ## Data limitations
 
@@ -36,3 +36,7 @@ Automatic login uses only the portal's documented-in-source `act=AutoLogin` auth
 ## Login diagnostics (0.1.3)
 
 Pre-authentication redirects no longer imply an expired session. Automatic login verifies account access before declaring success; unusable sessions are cleared and manual login remains available. Support codes contain only fixed application stage names, known failure enums or HTTP status integers. Raw response bodies, redirect locations, cookies, credentials and customer identifiers are never included. Redirect following and TLS policy are unchanged. Zero is rejected as an authenticated customer ID.
+
+## Authorized device-test credential handling
+
+The opt-in live suite gets credentials at runtime from a one-use loopback service through an ADB reverse tunnel. The helper uses hidden terminal prompts, suppresses request logging, keeps values in memory, and exits after the handoff. No credential dart-defines or embedded accounts are used. The tunnel is removed after testing. Default tests never invoke the live portal suite unless RUN_LIVE_PORTAL is enabled. Only read requests and authorized login/logout are exercised.

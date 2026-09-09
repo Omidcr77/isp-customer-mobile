@@ -9,9 +9,10 @@
 - Formatting: checked using Dart formatter; final artifact step rechecks formatting.
 - APK signature: **verified** with apksigner (v2 signature, one signer).
 - Final Android debug APK: **build succeeded**, including connection login and the fixed provider address. Package metadata verified with aapt2: `net.customerportal.isp_customer_mobile`, version `0.1.3` (4), min SDK 24, target SDK 36.
-- Android device tests: **not run to completion**. KVM access was unavailable; software emulation exposed ADB but remained too unresponsive for reliable execution. The emulator was shut down. `integration_test/app_test.dart` includes native secure-storage round-trip/clearing and fixture login/logout tests for a working emulator or test phone.
+- Android device acceptance: **passed on an Android 36 x86_64 emulator with KVM**, including real portal manual login. See the acceptance record below. Earlier software-only attempts were inconclusive.
 
-Tests contain invented data and never connect to the production portal. The native device fixture test is distinct from the host tests and must not be reported as passed unless the emulator executes it successfully. No real-device performance, accessibility audit, Play Store release, or production penetration test is claimed.
+
+Default tests use invented data and never connect to the portal. The explicitly enabled live acceptance test used the authorized temporary account, supplied in memory at runtime. No real-device performance, accessibility audit, Play Store release, or production penetration test is claimed.
 
 Build environment corrections: relocated the Flutter/Android tooling from RAM-backed `/tmp` to the main disk after NDK extraction exhausted temporary space; selected the existing complete Temurin JDK 21 because the system Java 21 directory lacked a compiler. The emulator had no KVM access; software emulation was attempted and shut down after unreliable boot behavior. No production-server settings changed.
 
@@ -44,3 +45,28 @@ The user's exact phone response was not reproduced on the workstation. Review fo
 Native acceptance remains pending; this is not a claim that network-based identification now succeeds on the user's phone.
 
 Version 0.1.3 APK metadata and signature verified; same signer as 0.1.2 allows installation over the existing app.
+
+## Completed Android acceptance — version 0.1.3
+
+Environment: Android 36 x86_64 emulator, KVM acceleration, 720×1280 display at 320 dpi. The local user enabled KVM access; no ISP server/router changes were made. A first native run passed five checks and exposed three test-harness failures: logout was below the fold, and tests did not scroll to it. The tests now scroll before tapping. Building the test APK before starting the emulator avoided workstation memory pressure; Kotlin compilation uses the Gradle process to avoid a separate compiler daemon.
+
+The combined prebuilt-APK run passed **10 named acceptance scenarios** (the runner also reports teardown):
+
+- HTTP acknowledgment does not submit login or produce an expiry error.
+- Mock connection login and logout; failed detection with manual fallback.
+- Complete fixture login/dashboard/settings/logout flows.
+- Expired-session and unreachable-server UI behavior.
+- Native English, Dari/Persian and Pashto login layouts, including RTL.
+- Real Android secure-storage write/read/delete.
+- **Real portal manual login through the native fields: accepted.**
+- Native dashboard pull-to-refresh and secure-session restoration with the original deadline.
+- Read-only dashboard, service, traffic, usage, balance, payments, packages, reports, documents and dashboard-derived profile requests; gift/installment histories; two usage drilldowns.
+- Server logout and local secure-session clearing.
+
+The actual AutoLogin request was rejected on the emulator connection and surfaced as `autoUnavailable` with `AUTO-CREDENTIALS`; manual login then succeeded. This does **not** verify automatic account detection on the customer's phone. Notifications and invoices returned existing unsupported notices; the test did not contact those unverified portal endpoints. Purchases, renewals, credit transfers, account/password changes and other mutations were not tested or submitted.
+
+Credentials arrived once through a temporary loopback handoff over ADB reverse; they were not embedded in the APK, test source, fixtures or logs. The handoff exited and the ADB reverse mapping was removed. Only fixed stage/outcome messages were recorded. The host suite still passes all 36 tests, and static analysis is clean. This is Android emulator acceptance, not physical-device or production-release certification.
+
+The separately delivered v0.1.3 APK was also installed and launched successfully via ADB after the instrumented acceptance run.
+
+ADB/UIAutomator also exercised the HTTP acknowledgment in the delivered customer APK: checkbox checked, login controls still visible, no expiry error. The emulator displayed an unrelated System UI ANR dialog during this separate smoke check; it was dismissed with Wait before interacting with the app. The instrumented acceptance run had already completed successfully.
