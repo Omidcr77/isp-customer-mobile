@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/portal_config.dart';
 import '../portal/data/delta_repository.dart';
 import '../portal/domain/portal.dart';
 
@@ -52,12 +53,29 @@ class SessionController extends Notifier<SessionState> {
     );
   }
 
-  Future<void> login(String url, String user, String pass, bool http) async {
+  Future<void> login(String user, String pass, bool http) async {
+    if (state.busy) return;
     state = const SessionState(ready: true, busy: true);
     try {
       await ref
           .read(repositoryProvider)
-          .login(url, user, pass, allowHttp: http);
+          .login(portalBaseUrl, user, pass, allowHttp: http);
+      state = const SessionState(ready: true, signedIn: true);
+      arm();
+    } on PortalException catch (e) {
+      state = SessionState(ready: true, error: e.kind);
+    } catch (_) {
+      state = const SessionState(ready: true, error: PortalFailure.server);
+    }
+  }
+
+  Future<void> autoLogin(bool http) async {
+    if (state.busy) return;
+    state = const SessionState(ready: true, busy: true);
+    try {
+      await ref
+          .read(repositoryProvider)
+          .autoLogin(portalBaseUrl, allowHttp: http);
       state = const SessionState(ready: true, signedIn: true);
       arm();
     } on PortalException catch (e) {

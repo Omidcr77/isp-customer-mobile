@@ -38,6 +38,16 @@ class FakeRepository implements PortalRepository {
   FakeRepository({this.failure, this.restored = false});
   PortalFailure? failure;
   bool restored, cleared = false;
+  String? loginBase;
+  int autoAttempts = 0;
+  @override
+  Future<void> autoLogin(String baseUrl, {bool allowHttp = false}) async {
+    autoAttempts++;
+    loginBase = baseUrl;
+    if (failure != null) throw PortalException(failure!);
+    restored = true;
+  }
+
   @override
   Future<bool> restore() async => restored;
   @override
@@ -47,6 +57,7 @@ class FakeRepository implements PortalRepository {
     String p, {
     bool allowHttp = false,
   }) async {
+    loginBase = b;
     if (failure != null) throw PortalException(failure!);
     restored = true;
   }

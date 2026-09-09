@@ -4,11 +4,11 @@
 - Authorized browser login: successful; account-scoped read-page navigation inspected.
 - Browser logout: returned to login; subsequent authenticated report returned SessionExpire (HTTP 200 HTML envelope).
 - No transactional/account-update requests submitted.
-- `flutter test`: **22 passing tests**, including parser/conversion, actual repository with mocked Dio responses, authentication state, expiry, unreachable server, complete fixture login/logout and English/Dari/Pashto RTL widget checks.
+- `flutter test --dart-define=ALLOW_HTTP=true`: **32 passing tests**, including parser/conversion, actual repository with mocked Dio responses, authentication state, expiry, unreachable server, complete fixture login/logout and English/Dari/Pashto RTL widget checks.
 - `flutter analyze`: **no issues found**.
 - Formatting: checked using Dart formatter; final artifact step rechecks formatting.
 - APK signature: **verified** with apksigner (v2 signature, one signer).
-- Final Android debug APK: **build succeeded**, including the login-loop fix. Package metadata verified with aapt2: `net.customerportal.isp_customer_mobile`, version `0.1.1` (2), min SDK 24, target SDK 36.
+- Final Android debug APK: **build succeeded**, including connection login and the fixed provider address. Package metadata verified with aapt2: `net.customerportal.isp_customer_mobile`, version `0.1.2` (3), min SDK 24, target SDK 36.
 - Android device tests: **not run to completion**. KVM access was unavailable; software emulation exposed ADB but remained too unresponsive for reliable execution. The emulator was shut down. `integration_test/app_test.dart` includes native secure-storage round-trip/clearing and fixture login/logout tests for a working emulator or test phone.
 
 Tests contain invented data and never connect to the production portal. The native device fixture test is distinct from the host tests and must not be reported as passed unless the emulator executes it successfully. No real-device performance, accessibility audit, Play Store release, or production penetration test is claimed.
@@ -19,7 +19,7 @@ Build environment corrections: relocated the Flutter/Android tooling from RAM-ba
 
 `artifacts/isp-customer-mobile-debug.apk`
 
-SHA-256: `3b48cd91a62eecfafac571ea33a954e345df1d8316ed0b0d2b797203e6c6e9e9`
+SHA-256: `68e4475ecce2d984ae6a68c5b26a9079f5513e8c808aac239a3f404828f23983`
 
 The debug manifest declares backup disabled and HTTP allowed; application code additionally requires explicit HTTP acknowledgement. Release manifest/code prohibit HTTP. This is a debug build, not a signed production release.
 
@@ -28,3 +28,11 @@ The debug manifest declares backup disabled and HTTP allowed; application code a
 The original synthetic dashboard omitted JavaScript expiry handlers that are present in the real authenticated dashboard. Adding that structure reproduced false session expiry in both parser and repository tests before the fix. The adapter now distinguishes handler source text from control responses and detects a real login form structurally. The updated 22-test suite passes; static analysis and formatting pass. The rebuilt 0.1.1 APK has the same verified signing certificate as 0.1.0, allowing an in-place upgrade.
 
 This correction was verified using the previously observed page structure and synthetic fixtures; native login on the customer's phone still needs confirmation. No account or server settings were changed.
+
+## Connection login and fixed provider (0.1.2)
+
+Public wrapper and AJAX helper inspected using read-only GET requests. One authorized standard AutoLogin POST returned HTTP 200 with a server error envelope from this workstation; no successful identity or customer data was read through this attempt. Cookies remained in memory and response contents were not logged.
+
+The 32 host tests pass with ALLOW_HTTP enabled, including a successful mock AutoLogin with cookies, rejected/malformed/cookieless replies, timeout clearing, manual fallback, fixed-address selection, one attempt after HTTP acknowledgement, no logout loop, persisted-session origin rejection, original session deadline, and three-language RTL layouts. Static analysis has no issues. Native automatic login from an eligible customer's phone remains unverified. Integration-test field selection was updated for the removed URL input; device integration was not rerun because a usable Android device is unavailable.
+
+The 0.1.2 debug APK signature and version metadata were verified. It uses the same signing certificate as 0.1.1 for an in-place update.

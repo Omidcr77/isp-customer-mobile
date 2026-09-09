@@ -59,20 +59,10 @@ void main() {
     addTearDown(c.dispose);
     final auth = c.read(sessionProvider.notifier);
     await auth.restore();
-    await auth.login(
-      'https://portal.example/users/',
-      'fixture',
-      'fixture',
-      false,
-    );
+    await auth.login('fixture', 'fixture', false);
     expect(c.read(sessionProvider).error, PortalFailure.credentials);
     repo.failure = null;
-    await auth.login(
-      'https://portal.example/users/',
-      'fixture',
-      'fixture',
-      false,
-    );
+    await auth.login('fixture', 'fixture', false);
     expect(c.read(sessionProvider).signedIn, true);
     await auth.expire();
     expect(c.read(sessionProvider).signedIn, false);

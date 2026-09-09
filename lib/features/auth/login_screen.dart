@@ -30,17 +30,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final form = GlobalKey<FormState>();
-  final server = TextEditingController(
-    text: const String.fromEnvironment(
-      'SERVER_URL',
-      defaultValue: 'https://portal.example.com/users/',
-    ),
-  );
   final user = TextEditingController(), password = TextEditingController();
   bool visible = false, http = false;
   @override
   void dispose() {
-    server.dispose();
     user.dispose();
     password.clear();
     password.dispose();
@@ -51,9 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!(form.currentState?.validate() ?? false)) return;
     final secret = password.text;
     password.clear();
-    await ref
-        .read(sessionProvider.notifier)
-        .login(server.text, user.text, secret, http);
+    await ref.read(sessionProvider.notifier).login(user.text, secret, http);
   }
 
   @override
@@ -96,22 +87,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
-                      controller: server,
-                      enabled: !state.busy,
-                      textDirection: TextDirection.ltr,
-                      keyboardType: TextInputType.url,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: w('server'),
-                        helperText: w('serverHelp'),
-                        helperMaxLines: 3,
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? w('insecure') : null,
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
                       controller: user,
+                      autofillHints: const [AutofillHints.username],
                       enabled: !state.busy,
                       autocorrect: false,
                       enableSuggestions: false,
@@ -127,6 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: password,
+                      autofillHints: const [AutofillHints.password],
                       enabled: !state.busy,
                       obscureText: !visible,
                       autocorrect: false,
@@ -159,12 +137,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         value: http,
                         onChanged: state.busy
                             ? null
-                            : (v) => setState(() => http = v ?? false),
+                            : (v) {
+                                setState(() => http = v ?? false);
+                                if (http) {
+                                  ref
+                                      .read(sessionProvider.notifier)
+                                      .autoLogin(http);
+                                }
+                              },
                         title: Text(
                           w('http'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
+                    OutlinedButton.icon(
+                      onPressed: state.busy
+                          ? null
+                          : () => ref
+                                .read(sessionProvider.notifier)
+                                .autoLogin(http),
+                      icon: const Icon(Icons.wifi_find),
+                      label: Text(w('autoLogin')),
+                    ),
+                    Text(
+                      w('autoHelp'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     if (state.error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),

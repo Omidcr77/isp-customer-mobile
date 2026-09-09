@@ -1,5 +1,6 @@
 enum PortalFailure {
   credentials,
+  autoUnavailable,
   unreachable,
   timeout,
   expired,
@@ -82,6 +83,7 @@ abstract interface class PortalRepository {
     String password, {
     bool allowHttp = false,
   });
+  Future<void> autoLogin(String baseUrl, {bool allowHttp = false});
   Future<PortalPage> read(
     PortalSection section, {
     Map<String, String> usage = const {},

@@ -30,6 +30,21 @@ class Words {
       'ستاسو انټرنېټ په یوه نظر.',
     ],
     'login': ['Sign in', 'ورود', 'ننوتل'],
+    'autoLogin': [
+      'Sign in with my connection',
+      'ورود از طریق اتصال من',
+      'زما د اتصال له لارې ننوتل',
+    ],
+    'autoHelp': [
+      'Connect to your ISP Wi-Fi. If automatic sign-in is unavailable, enter your username and password.',
+      'به وای‌فای شرکت وصل شوید. اگر ورود خودکار ممکن نبود، نام کاربری و رمز عبور را وارد کنید.',
+      'د خپل شرکت وای فای سره وصل شئ. که اتومات ننوتل ممکن نه وي، کارن نوم او پټنوم ولیکئ.',
+    ],
+    'autoUnavailable': [
+      'Your connection could not be matched to an account. Sign in with your username and password.',
+      'حساب شما از طریق اتصال شناسایی نشد. با نام کاربری و رمز عبور وارد شوید.',
+      'ستاسو له اتصال څخه حساب ونه پېژندل شو. د کارن نوم او پټنوم له لارې ننوځئ.',
+    ],
     'username': ['Username', 'نام کاربری', 'کارن نوم'],
     'password': ['Password', 'رمز عبور', 'پټنوم'],
     'server': ['Portal URL', 'آدرس پورتال', 'د پورټل پته'],

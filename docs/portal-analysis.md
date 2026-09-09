@@ -74,3 +74,7 @@ Expiry: `~SessionExpire`, `~ChangeUser`, and timeout callbacks redirect toward l
 Native Flutter → Riverpod session controller and screen state → `PortalRepository` interface → `DeltaRepository` (Dio, encrypted session vault, same-origin requests) → isolated `PortalHtmlAdapter` → immutable domain data → native widgets.
 
 Direct Android integration works without browser CORS constraints. The legacy HTML contract is fragile and private-address-only. A provider-operated HTTPS integration service with a stable, versioned read-only JSON contract is preferable before broad deployment, particularly if portal schema or network exposure cannot be controlled. No such service was deployed or invented as an existing API. No WebView, JavaScript bridge or TLS bypass is used.
+
+## Connection-based authentication update (0.1.2)
+
+The public wrapper implements a server-supported AutoLogin action in addition to ManualLogin. See the endpoint inventory for the observed request and test outcome. The app now offers this flow using the server-returned identity and session cookie. A failed detection leaves manual sign-in available. No password discovery or browser credential extraction occurs. The provider address is now fixed at the user's request; the former URL field and compile-time SERVER_URL setting were removed.

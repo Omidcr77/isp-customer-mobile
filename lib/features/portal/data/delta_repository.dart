@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/portal_config.dart';
 import '../domain/portal.dart';
 import 'html_adapter.dart';
 
@@ -83,6 +84,10 @@ class DeltaRepository implements PortalRepository {
         data['base'] as String,
         allowHttp: data['http'] == true,
       );
+      if (base.toString() != portalBaseUrl) {
+        await clear();
+        return false;
+      }
       userId = data['id'] as String;
       issuedAt = DateTime.parse(data['issued'] as String);
       if (!RegExp(r'^\d+$').hasMatch(userId!) ||
@@ -157,17 +162,49 @@ class DeltaRepository implements PortalRepository {
         },
         authenticated: false,
       );
-      userId = adapter.loginId(response);
-      issuedAt = now();
-      final cookies = await jar.loadForRequest(base!);
-      if (!cookies.any((c) => c.name == 'DSUSERSESSID' && c.value.isNotEmpty)) {
-        throw const PortalException(PortalFailure.malformed);
-      }
-      await persist();
+      await _acceptLogin(response);
     } catch (_) {
       await clear();
       rethrow;
     }
+  }
+
+  @override
+  Future<void> autoLogin(String baseUrl, {bool allowHttp = false}) async {
+    await clear();
+    base = validateBase(baseUrl, allowHttp: allowHttp);
+    try {
+      // Match the portal wrapper's normal connection-based login flow.
+      await _request('', authenticated: false);
+      final response = await _request(
+        'commonpages/DSUserProcessLogin.php',
+        post: true,
+        query: {'User_Id': '0'},
+        data: {'act': 'AutoLogin'},
+        authenticated: false,
+      );
+      await _acceptLogin(response);
+    } on PortalException catch (e) {
+      await clear();
+      throw PortalException(
+        e.kind == PortalFailure.credentials
+            ? PortalFailure.autoUnavailable
+            : e.kind,
+      );
+    } catch (_) {
+      await clear();
+      rethrow;
+    }
+  }
+
+  Future<void> _acceptLogin(String response) async {
+    userId = adapter.loginId(response);
+    issuedAt = now();
+    final cookies = await jar.loadForRequest(base!);
+    if (!cookies.any((c) => c.name == 'DSUSERSESSID' && c.value.isNotEmpty)) {
+      throw const PortalException(PortalFailure.malformed);
+    }
+    await persist();
   }
 
   Future<String> _request(

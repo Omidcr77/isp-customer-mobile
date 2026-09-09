@@ -31,8 +31,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'fixture');
     await tester.enterText(find.byType(TextFormField).at(1), 'fixture');
-    await tester.enterText(find.byType(TextFormField).at(2), 'fixture');
     await tester.ensureVisible(find.text('Sign in'));
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();

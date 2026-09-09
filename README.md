@@ -2,6 +2,12 @@
 
 Native Flutter Android client for the inspected DeltaSIB portal. This is a working read-only integration project, **not a production-release certification**. It does not embed a website or contain test-account credentials.
 
+## Version 0.1.2: connection sign-in
+
+The login screen uses the fixed provider address `http://192.168.10.2/users/`; there is no URL setting or SERVER_URL override. Connect the phone to the ISP Wi-Fi, open the app, and acknowledge HTTP transport. This starts one automatic sign-in attempt using the portal's existing `act=AutoLogin` action. Use **Sign in with my connection** to retry. If the server cannot identify your connection, enter your own username and password and tap **Sign in**. The app does not extract passwords from Chrome or other browsers. Logout returns to the login screen without automatically signing back in.
+
+Automatic login depends on the portal's account mapping for the phone's network connection. It may not work on mobile data, another ISP, or a VPN that changes the source address. The workstation's live AutoLogin request returned a server rejection; success is covered by mocked transport tests and still needs confirmation from an eligible customer connection.
+
 ## Version 0.1.1 login fix
 
 Version 0.1.0 incorrectly treated expiry-marker strings inside the dashboard's normal JavaScript error handlers as a real expired session, clearing a successful login. Version 0.1.1 checks response payloads and actual authentication controls instead. Updated dashboard fixtures reproduce the original failure, and the 22-test suite passes after the fix. Install the updated APK over the existing app and sign in again; a password change is not required for this bug.
@@ -19,9 +25,8 @@ export TMPDIR=/home/omid/projects/.isp-toolchain/tmp
 flutter pub get
 dart format --output=none --set-exit-if-changed lib test integration_test
 flutter analyze
-flutter test
+flutter test --dart-define=ALLOW_HTTP=true
 flutter build apk --debug \
-  --dart-define=SERVER_URL=http://192.168.10.2/users/ \
   --dart-define=ALLOW_HTTP=true
 ```
 
@@ -33,15 +38,9 @@ Deliverable copies are in `artifacts/`: the debug APK and a source ZIP. Normal b
 adb install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-The phone must be on a network/VPN that can reach the configured portal. Each customer enters their own credentials. The debug HTTP checkbox explicitly acknowledges plaintext transport. No credentials are pre-filled. Sign out to change the server URL. The server root must end in `/users/`. A different proxy path requires an intentional adapter update.
+The phone must be on a network that can reach the fixed portal. The debug HTTP checkbox explicitly acknowledges plaintext transport. Automatic login sends no username or password; manual login remains available. No real credentials are pre-filled. Sessions previously saved for a different origin are discarded.
 
-For HTTPS debug testing:
-
-```sh
-flutter run --dart-define=SERVER_URL=https://portal.example.com/users/
-```
-
-Before release, supply a valid HTTPS endpoint and private signing configuration. HTTP remains blocked in release even if ALLOW_HTTP is set. Follow the official [Flutter Android signing/build guide](https://docs.flutter.dev/deployment/android). Do not distribute a debug APK as a production release.
+Before release, migrate to a valid HTTPS endpoint through a reviewed change to `lib/core/portal_config.dart` and configure private signing. HTTP remains blocked in release even if ALLOW_HTTP is set, so the current fixed HTTP address is for LAN debug use. Follow the official [Flutter Android signing/build guide](https://docs.flutter.dev/deployment/android). Do not distribute a debug APK as a production release.
 
 ## App behavior
 
@@ -67,7 +66,7 @@ The repository exposes reads plus login/logout, with no transaction methods. Dio
 
 ## Tests
 
-`flutter test` runs parser/data-conversion tests, real repository integration with mocked Dio responses, authentication state tests and English/Dari/Pashto widget tests. These never call the production portal. Fixtures use fictitious names, IDs and session strings. For a connected local emulator/test phone:
+`flutter test --dart-define=ALLOW_HTTP=true` runs parser/data-conversion tests, real repository integration with mocked Dio responses, authentication state tests and English/Dari/Pashto widget tests. These never call the production portal. Fixtures use fictitious names, IDs and session strings. For a connected local emulator/test phone:
 
 ```sh
 flutter devices

@@ -4,8 +4,8 @@
 
 - Password used only for login, cleared from the input immediately after submission, never saved. Immutable Dart strings cannot be guaranteed memory-zeroed.
 - Session cookies, user ID, origin and issuance time stored as one flutter_secure_storage entry. No real credentials in source, examples, fixtures or documentation.
-- Session cookies in memory use CookieJar domain/path/expiry rules. Persisted sessions are bound to their origin. Origin change begins by clearing old state.
-- Login accepts only a configured HTTP(S) `/users/` root with no user-info, query or fragment. HTTP requires debug compilation with ALLOW_HTTP and explicit user acknowledgement; release blocks it even if ALLOW_HTTP is set.
+- Session cookies in memory use CookieJar domain/path/expiry rules. Persisted sessions are bound to their origin. Restoration rejects sessions from an origin other than the fixed provider address.
+- The app uses a fixed provider address with no editable URL or SERVER_URL override. The underlying adapter validates HTTP(S) `/users/` roots with no user-info, query or fragment. HTTP requires debug compilation with ALLOW_HTTP and explicit user acknowledgement; release blocks it even if ALLOW_HTTP is set.
 - Redirects are not followed. TLS verification is never disabled. No credential forwarding across redirects.
 - Session lifetime is conservatively capped at 15 minutes. Server expiry and user-change markers clear authentication. App backgrounding clears rendered customer content; resumption refetches or expires.
 - Logout attempts server invalidation and always clears local state. An unreachable server may keep its own session alive until server expiry; the UI reports failure without retaining the local session.
@@ -28,3 +28,7 @@
 ## Data limitations
 
 The UI distinguishes connection permission from live connection status. It does not infer currency or calendar conversions. Remaining days are read directly from the portal. Unknown markup produces an explicit unsupported/empty state instead of fabricated records; some account variants can still require parser changes. Cookie rotation, concurrent session replacement, natural server timeout and backend authorization were not exhaustively audited.
+
+## Connection login (0.1.2)
+
+Automatic login uses only the portal's documented-in-source `act=AutoLogin` authentication action. It sends no supplied credentials, extracts no browser passwords, and trusts only a successful login response plus a session cookie. Server refusals clear temporary session state and offer manual sign-in; transport failures retain their specific error messages. No repeated background retries or automatic login on logout/session expiry occur. Acknowledging HTTP on the login screen initiates one attempt; a separate button permits an intentional retry. This delegates account identification to the portal and does not establish that its network-to-account mapping is safe on shared networks. HTTPS/VPN release guidance still applies to automatic-login session cookies.

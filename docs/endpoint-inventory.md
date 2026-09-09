@@ -1,6 +1,6 @@
 # Sanitized endpoint inventory
 
-Base: configured portal root ending `/users/`. All authenticated requests use the session cookie and the **login-returned** `User_Id`; no arbitrary customer IDs are discovered or iterated. Parameters below are names, except public action selectors. Responses were HTML or delimited text, not a documented REST/JSON API.
+App base: fixed `http://192.168.10.2/users/`. All authenticated requests use the session cookie and the **login-returned** `User_Id`; no arbitrary customer IDs are discovered or iterated. Parameters below are names, except public action selectors. Responses were HTML or delimited text, not a documented REST/JSON API.
 
 | Relative path | Method | Parameters | Evidence / classification |
 |---|---|---|---|
@@ -10,6 +10,7 @@ Base: configured portal root ending `/users/`. All authenticated requests use th
 | `computer/Custom.php` | GET | none | Public embedded landing content |
 | `computer/DS_Login.php` | GET | same iframe parameters | Login form |
 | `commonpages/DSUserProcessLogin.php` | POST | query User_Id; form Username, Password, act=ManualLogin | Successful authorized login; text `OK~<id>` |
+| `commonpages/DSUserProcessLogin.php` | POST | query User_Id=0; form act=AutoLogin only | Public wrapper callback and AJAX helper inspected; live request rejected on workstation connection; app supports normal login response and manual fallback |
 | `computer/DS_MyInternet.php` | GET | User_Id, Device, WebNewUser, NCR, Feedback | Authenticated full HTML dashboard |
 | `computer/DS_Rep_DailyUsage.php` | POST | query User_Id; form Type=Totally | Account service report |
 | same | POST | query User_Id; Type=Monthly, User_ServiceBase_Id | Monthly totals; identifiers follow links belonging to account |
@@ -34,10 +35,14 @@ Base: configured portal root ending `/users/`. All authenticated requests use th
 - `commonpages/DSInvoice.php?Id=...`: invoice code reference; no verified list or download access.
 - `computer/DS_verifyAgreement.php`: purchase agreement step.
 - `commonpages/DSMyInternetRender.php`: source mentions ChangePass, TransferCredit, AddEmergencyCredit, ActiveServiceReserve, Disconnect, ActiveGift, AbandonGift, FindFamily, CheckShahkar, GetServicePrice. No requests to these actions were made. Parameter contracts and side effects must be reviewed before any future implementation.
-- AutoLogin is in public page code but was not used.
+- AutoLogin uses the normal authentication handler; no username, password or customer ID is inferred by the app.
 
 ## Authentication and transport
 
 Cookies: DSUSERSESSID and DSUserTimeOut, values omitted. Observed flags lacked Secure/HttpOnly; SameSite Lax reported by browser. No CSRF input was observed in the inspected login/password forms; absence in inspected markup is **not** proof that the server has no CSRF defense. App follows no redirects, rejects non-HTTPS release URLs, uses normal platform certificate validation, and reads only fixed page paths. It never evaluates returned scripts or follows invoice/document/external links.
 
 Browser network capture was programmatic. Natural authentication timeout, incorrect-login response text, populated catalog/documents, notification effects, and transaction responses were not tested. All tests in the repository run with synthetic fixtures; they do not contact the portal.
+
+## Connection login update (0.1.2)
+
+Read-only public source inspection found `ShowAutoLogin(Username, Delay)`, whose confirmation/countdown calls `DoAjax` with `act=AutoLogin`. The helper sends a POST and appends `User_Id`; its success callback accepts `OK~<id>`. The workstation wrapper did not invoke ShowAutoLogin for this connection. A normal AutoLogin request with an in-memory cookie jar returned HTTP 200 with an error envelope, not a successful identity. No credential or cookie values were saved. Successful connection detection on an eligible phone remains unverified; browser password-manager autofill is a separate mechanism that this endpoint does not provide.
