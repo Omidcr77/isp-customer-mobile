@@ -66,6 +66,9 @@ class PortalHtmlAdapter {
       }
       throw const PortalException(PortalFailure.malformed);
     }
+    if (BigInt.parse(match[1]!) == BigInt.zero) {
+      throw const PortalException(PortalFailure.credentials);
+    }
     return match[1]!;
   }
 

@@ -137,14 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         value: http,
                         onChanged: state.busy
                             ? null
-                            : (v) {
-                                setState(() => http = v ?? false);
-                                if (http) {
-                                  ref
-                                      .read(sessionProvider.notifier)
-                                      .autoLogin(http);
-                                }
-                              },
+                            : (v) => setState(() => http = v ?? false),
                         title: Text(
                           w('http'),
                           style: Theme.of(context).textTheme.bodySmall,
@@ -177,6 +170,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: Theme.of(context).colorScheme.error,
                           ),
                         ),
+                      ),
+                    if (state.diagnostic != null)
+                      Text(
+                        '${w('diagnostic')}: ${state.diagnostic}',
+                        textDirection: TextDirection.ltr,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     const SizedBox(height: 12),
                     FilledButton(

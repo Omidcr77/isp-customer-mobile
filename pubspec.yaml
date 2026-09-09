@@ -1,7 +1,7 @@
 name: isp_customer_mobile
 description: Read-only native customer app for DeltaSIB ISP portals.
 publish_to: none
-version: 0.1.2+3
+version: 0.1.3+4
 environment:
   sdk: ^3.13.2
 dependencies:

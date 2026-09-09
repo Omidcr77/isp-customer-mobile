@@ -2,11 +2,13 @@
 
 Native Flutter Android client for the inspected DeltaSIB portal. This is a working read-only integration project, **not a production-release certification**. It does not embed a website or contain test-account credentials.
 
-## Version 0.1.2: connection sign-in
+## Version 0.1.3: explicit connection login
 
-The login screen uses the fixed provider address `http://192.168.10.2/users/`; there is no URL setting or SERVER_URL override. Connect the phone to the ISP Wi-Fi, open the app, and acknowledge HTTP transport. This starts one automatic sign-in attempt using the portal's existing `act=AutoLogin` action. Use **Sign in with my connection** to retry. If the server cannot identify your connection, enter your own username and password and tap **Sign in**. The app does not extract passwords from Chrome or other browsers. Logout returns to the login screen without automatically signing back in.
+The login screen uses the fixed provider address `http://192.168.10.2/users/`; there is no URL setting or SERVER_URL override. Connect to the ISP Wi-Fi and acknowledge HTTP transport. **The checkbox only records acknowledgment; it does not submit a login.** Then choose **Sign in with my connection**, or enter your own username/password and tap **Sign in**. The app does not extract passwords saved in Chrome. Logout never automatically signs back in.
 
-Automatic login depends on the portal's account mapping for the phone's network connection. It may not work on mobile data, another ISP, or a VPN that changes the source address. The workstation's live AutoLogin request returned a server rejection; success is covered by mocked transport tests and still needs confirmation from an eligible customer connection.
+Connection login uses the portal's existing AutoLogin action and verifies that the returned session can access the account before opening the dashboard. If the server refuses or redirects this flow, the app offers manual sign-in instead of claiming an existing session expired. An application-generated support code identifies the failed stage/status without exposing URLs, credentials, cookies or customer IDs. Redirects remain blocked.
+
+The exact failure reported on the customer's phone has not been reproduced from this workstation. The live workstation AutoLogin request was rejected; success is covered by mock responses and still needs confirmation from an eligible customer connection. Automatic login depends on the portal's network-to-account mapping and may fail over mobile data or a VPN.
 
 ## Version 0.1.1 login fix
 

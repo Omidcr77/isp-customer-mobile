@@ -184,12 +184,25 @@ class DeltaRepository implements PortalRepository {
         authenticated: false,
       );
       await _acceptLogin(response);
+      // A success token alone does not prove the server accepted the session.
+      await _request(
+        'computer/DS_MyInternet.php',
+        query: {
+          'Device': 'computer',
+          'WebNewUser': 'No',
+          'NCR': 'No',
+          'Feedback': 'No',
+        },
+      );
     } on PortalException catch (e) {
       await clear();
       throw PortalException(
-        e.kind == PortalFailure.credentials
+        e.kind == PortalFailure.credentials ||
+                e.kind == PortalFailure.expired ||
+                (e.diagnostic?.contains('-HTTP3') ?? false)
             ? PortalFailure.autoUnavailable
             : e.kind,
+        diagnostic: e.diagnostic ?? 'AUTO-${e.kind.name.toUpperCase()}',
       );
     } catch (_) {
       await clear();
@@ -214,6 +227,13 @@ class DeltaRepository implements PortalRepository {
     Map<String, String> data = const {},
     bool authenticated = true,
   }) async {
+    final stage = path.isEmpty
+        ? 'ENTRY'
+        : path.contains('ProcessLogin')
+        ? 'AUTH'
+        : path.contains('DS_Login')
+        ? 'FORM'
+        : 'ACCOUNT';
     final epoch = generation;
     if (authenticated &&
         (userId == null ||
@@ -248,10 +268,14 @@ class DeltaRepository implements PortalRepository {
       if (status == 401 || status == 403) {
         throw PortalException(
           authenticated ? PortalFailure.expired : PortalFailure.credentials,
+          diagnostic: '$stage-HTTP$status',
         );
       }
       if (status >= 300 && status < 400) {
-        throw const PortalException(PortalFailure.expired);
+        throw PortalException(
+          authenticated ? PortalFailure.expired : PortalFailure.server,
+          diagnostic: '$stage-HTTP$status',
+        );
       }
       if (status != 200) throw const PortalException(PortalFailure.server);
       final body = response.data ?? '';
@@ -279,7 +303,10 @@ class DeltaRepository implements PortalRepository {
       });
     } on PortalException catch (e) {
       if (e.kind == PortalFailure.expired) await clear();
-      rethrow;
+      throw PortalException(
+        e.kind,
+        diagnostic: e.diagnostic ?? '$stage-${e.kind.name.toUpperCase()}',
+      );
     } on FormatException {
       throw const PortalException(PortalFailure.malformed);
     }

@@ -19,9 +19,11 @@ class SessionState {
     this.signedIn = false,
     this.busy = false,
     this.error,
+    this.diagnostic,
   });
   final bool ready, signedIn, busy;
   final PortalFailure? error;
+  final String? diagnostic;
 }
 
 class SessionController extends Notifier<SessionState> {
@@ -63,7 +65,11 @@ class SessionController extends Notifier<SessionState> {
       state = const SessionState(ready: true, signedIn: true);
       arm();
     } on PortalException catch (e) {
-      state = SessionState(ready: true, error: e.kind);
+      state = SessionState(
+        ready: true,
+        error: e.kind,
+        diagnostic: e.diagnostic,
+      );
     } catch (_) {
       state = const SessionState(ready: true, error: PortalFailure.server);
     }
@@ -79,7 +85,11 @@ class SessionController extends Notifier<SessionState> {
       state = const SessionState(ready: true, signedIn: true);
       arm();
     } on PortalException catch (e) {
-      state = SessionState(ready: true, error: e.kind);
+      state = SessionState(
+        ready: true,
+        error: e.kind,
+        diagnostic: e.diagnostic,
+      );
     } catch (_) {
       state = const SessionState(ready: true, error: PortalFailure.server);
     }
@@ -101,7 +111,11 @@ class SessionController extends Notifier<SessionState> {
       await ref.read(repositoryProvider).logout();
       state = const SessionState(ready: true);
     } on PortalException catch (e) {
-      state = SessionState(ready: true, error: e.kind);
+      state = SessionState(
+        ready: true,
+        error: e.kind,
+        diagnostic: e.diagnostic,
+      );
     } catch (_) {
       state = const SessionState(ready: true, error: PortalFailure.server);
     }

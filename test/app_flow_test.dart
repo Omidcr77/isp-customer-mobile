@@ -8,7 +8,7 @@ import 'package:isp_customer_mobile/features/portal/domain/portal.dart';
 import 'support.dart';
 
 void main() {
-  testWidgets('HTTP acknowledgement starts exactly one automatic attempt', (
+  testWidgets('HTTP acknowledgement does not submit login or show expiry', (
     tester,
   ) async {
     final repo = FakeRepository(failure: PortalFailure.autoUnavailable);
@@ -23,8 +23,16 @@ void main() {
     await tester.ensureVisible(find.byType(CheckboxListTile));
     await tester.tap(find.byType(CheckboxListTile));
     await tester.pumpAndSettle();
-    expect(repo.autoAttempts, 1);
+    expect(repo.autoAttempts, 0);
     await tester.pump(const Duration(seconds: 30));
+    expect(repo.autoAttempts, 0);
+    expect(
+      find.text('Your session ended. Please sign in again.'),
+      findsNothing,
+    );
+    await tester.ensureVisible(find.text('Sign in with my connection'));
+    await tester.tap(find.text('Sign in with my connection'));
+    await tester.pumpAndSettle();
     expect(repo.autoAttempts, 1);
   }, skip: !const bool.fromEnvironment('ALLOW_HTTP'));
 

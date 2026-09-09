@@ -30,6 +30,7 @@ class Words {
       'ستاسو انټرنېټ په یوه نظر.',
     ],
     'login': ['Sign in', 'ورود', 'ننوتل'],
+    'diagnostic': ['Support code', 'کد پشتیبانی', 'د ملاتړ کوډ'],
     'autoLogin': [
       'Sign in with my connection',
       'ورود از طریق اتصال من',

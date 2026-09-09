@@ -8,6 +8,102 @@ import 'package:isp_customer_mobile/features/portal/domain/portal.dart';
 import 'support.dart';
 
 void main() {
+  for (final redirectStage in ['entry', 'auth']) {
+    test(
+      'automatic login redirect at $redirectStage is not session expiry',
+      () async {
+        final requests = <RequestOptions>[];
+        final vault = MemoryVault();
+        final dio = Dio()
+          ..httpClientAdapter = FixtureTransport((r) {
+            requests.add(r);
+            if (redirectStage == 'entry' || r.path.contains('ProcessLogin')) {
+              return ResponseBody.fromString(
+                '',
+                302,
+                headers: {
+                  'location': [
+                    'https://external.invalid/private?secret=synthetic',
+                  ],
+                },
+              );
+            }
+            return ResponseBody.fromString('wrapper', 200);
+          });
+        final repo = DeltaRepository(vault: vault, client: dio);
+        try {
+          await repo.autoLogin('https://portal.example/users/');
+          fail('redirect must not authenticate');
+        } on PortalException catch (e) {
+          expect(e.kind, PortalFailure.autoUnavailable);
+          expect(
+            e.diagnostic,
+            '${redirectStage == 'entry' ? 'ENTRY' : 'AUTH'}-HTTP302',
+          );
+          expect(e.toString(), isNot(contains('secret')));
+        }
+        expect(requests.length, redirectStage == 'entry' ? 1 : 2);
+        expect(vault.value, isNull);
+      },
+    );
+  }
+
+  test(
+    'automatic login verifies that the returned session can read the account',
+    () async {
+      final vault = MemoryVault();
+      final dio = Dio()
+        ..httpClientAdapter = FixtureTransport(
+          (r) => ResponseBody.fromString(
+            r.path.contains('ProcessLogin')
+                ? 'OK~42'
+                : r.path.contains('DS_MyInternet')
+                ? '~SessionExpire'
+                : 'wrapper',
+            200,
+            headers: {
+              'set-cookie': ['DSUSERSESSID=fixture; Path=/users/; Secure'],
+            },
+          ),
+        );
+      final repo = DeltaRepository(vault: vault, client: dio);
+      try {
+        await repo.autoLogin('https://portal.example/users/');
+        fail('unusable session must not authenticate');
+      } on PortalException catch (e) {
+        expect(e.kind, PortalFailure.autoUnavailable);
+        expect(e.diagnostic, 'ACCOUNT-EXPIRED');
+      }
+      expect(vault.value, isNull);
+      expect(repo.userId, isNull);
+    },
+  );
+
+  test('zero is not an authenticated customer identity', () async {
+    final dio = Dio()
+      ..httpClientAdapter = FixtureTransport(
+        (r) => ResponseBody.fromString(
+          r.path.contains('ProcessLogin') ? 'OK~0' : 'wrapper',
+          200,
+          headers: {
+            'set-cookie': ['DSUSERSESSID=fixture; Path=/users/; Secure'],
+          },
+        ),
+      );
+    final repo = DeltaRepository(vault: MemoryVault(), client: dio);
+    await expectLater(
+      repo.autoLogin('https://portal.example/users/'),
+      throwsA(
+        isA<PortalException>().having(
+          (e) => e.kind,
+          'kind',
+          PortalFailure.autoUnavailable,
+        ),
+      ),
+    );
+    expect(repo.userId, isNull);
+  });
+
   test(
     'automatic login uses only the server action and its returned identity',
     () async {
@@ -26,12 +122,13 @@ void main() {
         });
       final repo = DeltaRepository(vault: vault, client: dio);
       await repo.autoLogin('https://portal.example/users/');
-      expect(requests.length, 2);
+      expect(requests.length, 3);
       expect(requests.first.method, 'GET');
       expect(requests.first.uri.path, '/users/');
-      expect(requests.last.method, 'POST');
-      expect(requests.last.data, {'act': 'AutoLogin'});
-      expect(requests.last.uri.queryParameters, {'User_Id': '0'});
+      expect(requests[1].method, 'POST');
+      expect(requests[1].data, {'act': 'AutoLogin'});
+      expect(requests[1].uri.queryParameters, {'User_Id': '0'});
+      expect(requests.last.uri.queryParameters['User_Id'], '42');
       expect(repo.userId, '42');
       expect(vault.value, isNotNull);
       await repo.clear();

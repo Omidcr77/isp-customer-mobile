@@ -11,8 +11,10 @@ enum PortalFailure {
 }
 
 class PortalException implements Exception {
-  const PortalException(this.kind);
+  const PortalException(this.kind, {this.diagnostic});
   final PortalFailure kind;
+  // Application-generated stage/status only; never server text or identifiers.
+  final String? diagnostic;
   @override
   String toString() => 'PortalException(${kind.name})';
 }

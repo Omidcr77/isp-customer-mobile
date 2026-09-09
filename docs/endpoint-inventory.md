@@ -46,3 +46,7 @@ Browser network capture was programmatic. Natural authentication timeout, incorr
 ## Connection login update (0.1.2)
 
 Read-only public source inspection found `ShowAutoLogin(Username, Delay)`, whose confirmation/countdown calls `DoAjax` with `act=AutoLogin`. The helper sends a POST and appends `User_Id`; its success callback accepts `OK~<id>`. The workstation wrapper did not invoke ShowAutoLogin for this connection. A normal AutoLogin request with an in-memory cookie jar returned HTTP 200 with an error envelope, not a successful identity. No credential or cookie values were saved. Successful connection detection on an eligible phone remains unverified; browser password-manager autofill is a separate mechanism that this endpoint does not provide.
+
+## 0.1.3 handling update
+
+The connection-login button performs GET wrapper → POST AutoLogin → authenticated GET dashboard verification. The HTTP acknowledgment checkbox no longer sends requests. Rechecking from the workstation with a Dart-style user agent returned 200 for the wrapper and a leading-tilde login refusal; this did not reproduce the phone's exact expiry response. Redirects remain unexecuted and are now classified by pre/post-authentication context. No new endpoint or transaction was introduced.
